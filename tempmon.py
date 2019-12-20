@@ -1,3 +1,4 @@
+import argparse
 import time
 import Adafruit_DHT
 import sys
@@ -37,7 +38,11 @@ def send_data(sensor_id, temperature, humidity):
 def main():
     global api_address
 
-    with open('config/config.json') as json_data_file:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", default='config/config.json', help="Config file location")
+    args = parser.parse_args()
+
+    with open(args.config) as json_data_file:
         config_data = json.load(json_data_file)
         api_address = config_data['api_address']
 

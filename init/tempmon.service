@@ -3,7 +3,8 @@ Description=Temperature Monitor Service
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/python3 /usr/local/tempmon/tempmon.py
+ExecStart=/usr/bin/python3 /home/pi/tempmon/tempmon.py --config /etc/tempmon/config.json
+Restart=always
 Type=simple
 User=pi
 
