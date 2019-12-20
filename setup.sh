@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
-pip install -r requirements.txt
+sudo apt update
+sudo apt install -y python3 python3-pip git
+
+pip3 install -r requirements.txt
 
 ln -f -s "$(pwd)/init/tempmon.service" /etc/systemd/system/tempmon.service
 systemctl daemon-reload
