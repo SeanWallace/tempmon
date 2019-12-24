@@ -6,6 +6,10 @@ fetch_result=$(git pull --dry-run)
 
 if [ -z "$fetch_result" ]
 then
+  echo 'New version of tempmon found...updating...'
+
   git pull
   bash /home/pi/tempmon/setup.sh
+
+  echo 'Done updating tempmon...Enjoy!'
 fi

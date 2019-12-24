@@ -32,7 +32,13 @@ def get_api_params():
 def send_data(sensor_id, temperature, humidity):
     full_address = "{}?action=add_reading&sensor_id={}&degrees_f={}&humidity={}".format(api_address, sensor_id,
                                                                                         temperature, humidity)
-    return requests.request(method="GET", url=full_address)
+    request_result = None
+    try:
+        request_result = requests.request(method="GET", url=full_address)
+    except Exception as e:
+        print("Unexpected error sending data:", e)
+
+    return request_result
 
 
 def main():
@@ -63,14 +69,21 @@ def main():
     print("Params from mother ship: {}".format(json.dumps(data, indent=2)))
 
     while True:
-        humidity, temperature = Adafruit_DHT.read_retry(DHT_SENSOR, DHT_PIN, delay_seconds=sleep_interval)
-        temperature_f = temperature * (9 / 5) + 32
+        humidity = None
+        temperature = None
+        temperature_f = None
 
-        if humidity is not None and temperature is not None:
+        try:
+            humidity, temperature = Adafruit_DHT.read_retry(DHT_SENSOR, DHT_PIN, delay_seconds=sleep_interval)
+            temperature_f = temperature * (9 / 5) + 32
+        except Exception as e:
+            print("Unexpected error collecting from sensor:", e)
+
+        if humidity is not None and temperature is not None and temperature_f is not None:
             print("Temp={:0.2f}C ({:0.2f}F) Humidity={:0.2f}%".format(temperature, temperature_f, humidity))
             send_data(sensor_id, temperature_f, humidity)
         else:
-            print("Failed to retrieve data from humidity sensor")
+            print("Failed to retrieve data from sensor")
 
         time.sleep(sleep_interval)
 
