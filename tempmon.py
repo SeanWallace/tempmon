@@ -1,14 +1,15 @@
 import argparse
 import time
-import Adafruit_DHT
-import sys
+import adafruit_dht
+import board
 import requests
 import json
+import signal
+import sys
 
 api_address = ""
-
-DHT_SENSOR = Adafruit_DHT.DHT11
-DHT_PIN = 4
+dht_device = None
+DHT_PIN = board.D4
 
 
 def get_serial_no():
@@ -42,7 +43,9 @@ def send_data(sensor_id, temperature, humidity):
 
 
 def main():
-    global api_address
+    global api_address, dht_device
+
+    signal.signal(signal.SIGINT, signal_handler)
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default='config/config.json', help="Config file location")
@@ -63,29 +66,48 @@ def main():
     data = r.json()
 
     sleep_interval = data['post_frequency']
-    if not sleep_interval:
-        sleep_interval = 0
+    if not sleep_interval or sleep_interval == 0:
+        # Make sure to have some amount of sleeping always so failures don't run away.
+        sleep_interval = 1
 
     print("Params from mother ship: {}".format(json.dumps(data, indent=2)))
 
     while True:
         humidity = None
-        temperature = None
+        temperature_c = None
         temperature_f = None
 
-        try:
-            humidity, temperature = Adafruit_DHT.read_retry(DHT_SENSOR, DHT_PIN, delay_seconds=sleep_interval)
-            temperature_f = temperature * (9 / 5) + 32
-        except Exception as e:
-            print("Unexpected error collecting from sensor:", e)
+        if dht_device is None:
+            dht_device = adafruit_dht.DHT11(DHT_PIN)
 
-        if humidity is not None and temperature is not None and temperature_f is not None:
-            print("Temp={:0.2f}C ({:0.2f}F) Humidity={:0.2f}%".format(temperature, temperature_f, humidity))
+        try:
+            temperature_c = dht_device.temperature
+            temperature_f = temperature_c * (9 / 5) + 32
+            humidity = dht_device.humidity
+        except RuntimeError as e:
+            print("RuntimeError collecting from sensor: {}".format(e.args[0]))
+        except Exception as e:
+            dht_device.exit()
+            dht_device = None
+
+            print("Unexpected error collecting from sensor: {}".format(e))
+
+        if humidity is not None and temperature_c is not None and temperature_f is not None:
+            print("Temp={:0.2f}C ({:0.2f}F) Humidity={:0.2f}%".format(temperature_c, temperature_f, humidity))
             send_data(sensor_id, temperature_f, humidity)
-        else:
-            print("Failed to retrieve data from sensor")
 
         time.sleep(sleep_interval)
+
+
+def signal_handler(sig, frame):
+    global dht_device
+
+    print('Received signal {}, shutting down...'.format(sig))
+
+    if dht_device is not None:
+        dht_device.exit()
+
+    sys.exit(0)
 
 
 if __name__ == "__main__":

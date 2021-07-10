@@ -4,7 +4,7 @@ cd /home/pi/tempmon || return
 
 fetch_result=$(git pull --dry-run)
 
-if [ -z "$fetch_result" ]
+if [[ -n $fetch_result ]]
 then
   echo 'New version of tempmon found...updating...'
 
