@@ -3,7 +3,7 @@
 set -ex
 
 apt update
-apt install -y python3 python3-pip git
+apt install -y python3 python3-pip git libgpiod2
 
 mkdir -p /etc/tempmon
 cp config/config.template.json /etc/tempmon
