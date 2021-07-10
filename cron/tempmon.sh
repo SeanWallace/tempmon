@@ -2,7 +2,7 @@
 
 cd /home/pi/tempmon || return
 
-fetch_result=$(git pull --dry-run)
+fetch_result=$(git pull --dry-run 2>&1)
 
 if [[ -n $fetch_result ]]
 then
